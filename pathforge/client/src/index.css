@@ -1,0 +1,118 @@
+/**
+ * PathForge Global Styles
+ * 
+ * Tailwind directives + custom base styles.
+ * Keep this file minimal — use Tailwind utility classes in components.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base Layer Overrides ─────────────────────────────────── */
+@layer base {
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar (webkit browsers) */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-primary-50 dark:bg-surface-dark;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary-300 rounded-full hover:bg-primary-500;
+  }
+
+  /* Better focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-500;
+  }
+
+  /* Default heading styles */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold text-surface-dark dark:text-white;
+  }
+}
+
+/* ─── Component Layer ──────────────────────────────────────── */
+@layer components {
+  /* Reusable button base */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           px-5 py-2.5 rounded-lg font-medium text-sm
+           transition-all duration-200 ease-in-out
+           focus-visible:outline-2 focus-visible:outline-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white
+           hover:bg-primary-700 active:bg-primary-700
+           focus-visible:outline-primary-600
+           shadow-soft hover:shadow-card;
+  }
+
+  .btn-secondary {
+    @apply btn bg-primary-100 text-primary-700
+           hover:bg-primary-300 active:bg-primary-300
+           focus-visible:outline-primary-500;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-primary-600
+           hover:bg-primary-50 active:bg-primary-100
+           focus-visible:outline-primary-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-accent-rose text-white
+           hover:bg-red-600 active:bg-red-700
+           focus-visible:outline-accent-rose;
+  }
+
+  /* Card component */
+  .card {
+    @apply bg-white dark:bg-primary-900/50
+           rounded-xl shadow-card
+           border border-primary-100 dark:border-primary-900/80
+           p-6;
+  }
+
+  /* Input field */
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-lg
+           border border-primary-300 dark:border-primary-700
+           bg-white dark:bg-surface-dark
+           text-surface-dark dark:text-white
+           placeholder:text-surface-muted
+           focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
+           transition-colors duration-200;
+  }
+
+  /* Badge (gamification) */
+  .badge-gold {
+    @apply inline-flex items-center gap-1
+           px-2.5 py-1 rounded-full
+           bg-accent-gold/10 text-accent-gold
+           text-xs font-semibold;
+  }
+}
+
+/* ─── Utility Layer ────────────────────────────────────────── */
+@layer utilities {
+  /* Text gradient for hero headings */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-primary-500
+           bg-clip-text text-transparent;
+  }
+
+  /* Glass effect for overlays */
+  .glass {
+    @apply bg-white/70 dark:bg-surface-dark/70
+           backdrop-blur-md;
+  }
+}

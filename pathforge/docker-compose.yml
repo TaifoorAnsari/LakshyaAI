@@ -1,0 +1,62 @@
+# PathForge — Docker Compose (Local Development)
+#
+# Spins up MongoDB and Redis for local development.
+# The server and client run via npm scripts (not Docker)
+# because Vite HMR and nodemon are faster that way.
+#
+# Usage:
+#   docker compose up -d        # Start MongoDB + Redis in background
+#   docker compose down         # Stop everything
+#   docker compose down -v      # Stop and delete data volumes
+#
+# The server connects via:
+#   MONGO_URI=mongodb://localhost:27017/pathforge
+#   REDIS_URL=redis://localhost:6379
+
+version: '3.8'
+
+services:
+  # ─── MongoDB ────────────────────────────────────────
+  # Document database for users, roadmaps, badges, etc.
+  # Data persists in a named volume across restarts.
+  mongo:
+    image: mongo:7
+    container_name: pathforge-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ─── Redis ──────────────────────────────────────────
+  # In-memory store for: caching, rate limiting,
+  # refresh-token blocklist, BullMQ queues, leaderboard.
+  redis:
+    image: redis:7-alpine
+    container_name: pathforge-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    # Persist data to disk every 60 seconds if at least 1 key changed
+    command: redis-server --save 60 1 --loglevel warning
+
+# Named volumes persist data across container restarts
+volumes:
+  mongo-data:
+    driver: local
+  redis-data:
+    driver: local
