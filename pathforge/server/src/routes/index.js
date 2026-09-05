@@ -56,8 +56,10 @@ router.get('/health', async (req, res) => {
 });
 
 const authRoutes = require('./authRoutes');
+const userRoutes = require('./userRoutes');
 
 // Mount Feature Routers
 router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
 
 module.exports = router;

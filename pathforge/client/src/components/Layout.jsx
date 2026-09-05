@@ -100,14 +100,18 @@ export default function Layout() {
               {/* Auth actions */}
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-100/60 dark:bg-primary-900/40 border border-primary-200 dark:border-primary-800">
+                  <Link
+                    to="/settings"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-100/60 dark:bg-primary-900/40 border border-primary-200 dark:border-primary-800 hover:border-primary-400 transition-colors"
+                    title="Account Settings"
+                  >
                     <div className="w-6 h-6 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold">
                       {user?.name ? user.name.charAt(0).toUpperCase() : <User size={12} />}
                     </div>
                     <span className="text-sm font-medium text-surface-dark dark:text-white">
                       {user?.name || 'Student'}
                     </span>
-                  </div>
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="btn-ghost text-sm py-1.5 px-3 flex items-center gap-1.5 text-surface-muted hover:text-accent-rose"

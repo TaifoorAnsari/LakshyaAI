@@ -19,6 +19,8 @@ import VerifyEmailPage from '@/pages/VerifyEmailPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import DashboardPage from '@/pages/DashboardPage';
+import OnboardingPage from '@/pages/OnboardingPage';
+import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute';
 
 export default function AppRouter() {
@@ -71,6 +73,22 @@ export default function AppRouter() {
           element={
             <ProtectedRoute>
               <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <ProfileSettingsPage />
             </ProtectedRoute>
           }
         />
