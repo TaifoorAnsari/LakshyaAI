@@ -50,7 +50,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-primary-50 dark:bg-surface-dark transition-colors duration-300">
       {/* ─── Navbar ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 glass border-b border-primary-100 dark:border-primary-900">
+      <header className="sticky top-0 z-30 glass border-b border-primary-100 dark:border-primary-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}

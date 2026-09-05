@@ -1,0 +1,296 @@
+/**
+ * Roadmap Zustand Store
+ * 
+ * Manages:
+ * - Active student roadmap state & list of all enrolled roadmaps (multi-roadmap support)
+ * - Automatic generation & enrollment pipeline
+ * - Status polling for custom AI generation
+ * - Roadmap switching & archiving
+ * - Add Roadmap modal state
+ * - Milestone slide-over drawer & interactive quiz modal state
+ * - Quiz submissions, progress syncing, and XP reflection
+ */
+
+import { create } from 'zustand';
+import api from '@/lib/axios';
+import { useAuthStore } from './authStore';
+
+export const useRoadmapStore = create((set, get) => ({
+  activeRoadmap: null,
+  myRoadmaps: [],
+  isLoading: false,
+  isGenerating: false,
+  generationProgress: 0,
+  selectedNode: null,
+  isDrawerOpen: false,
+  isQuizOpen: false,
+  isAddRoadmapModalOpen: false,
+  quizResult: null,
+  error: null,
+
+  /**
+   * Fetches the student's active enrolled roadmaps from MongoDB
+   */
+  fetchActiveRoadmap: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.get('/roadmaps/my');
+      if (res.data?.success) {
+        const roadmaps = res.data.data.roadmaps || [];
+        const primary = res.data.data.roadmap || roadmaps[0] || null;
+        set({
+          activeRoadmap: primary,
+          myRoadmaps: roadmaps,
+          isLoading: false,
+        });
+        return primary;
+      }
+      set({ isLoading: false });
+      return null;
+    } catch (err) {
+      set({ isLoading: false, error: err.response?.data?.message || err.message });
+      return null;
+    }
+  },
+
+  /**
+   * Switches the active roadmap display
+   */
+  switchRoadmap: async (roadmapId) => {
+    const { myRoadmaps } = get();
+    const target = myRoadmaps.find((r) => r._id === roadmapId);
+    if (target) {
+      set({ activeRoadmap: target, selectedNode: null, isDrawerOpen: false, isQuizOpen: false });
+    }
+
+    try {
+      const res = await api.post(`/roadmaps/${roadmapId}/select`);
+      if (res.data?.success) {
+        set({
+          activeRoadmap: res.data.data.roadmap,
+          myRoadmaps: res.data.data.roadmaps || myRoadmaps,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to update active roadmap selection:', err);
+    }
+  },
+
+  /**
+   * Archives / removes a roadmap from the student's active list
+   */
+  removeRoadmap: async (roadmapId) => {
+    try {
+      const res = await api.delete(`/roadmaps/${roadmapId}`);
+      if (res.data?.success) {
+        const remaining = res.data.data.roadmaps || [];
+        const primary = res.data.data.roadmap || remaining[0] || null;
+        set({
+          myRoadmaps: remaining,
+          activeRoadmap: primary,
+          selectedNode: null,
+          isDrawerOpen: false,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to remove roadmap:', err);
+    }
+  },
+
+  /**
+   * Initiates the full generation & enrollment pipeline
+   * 1. Calls /roadmaps/generate
+   * 2. If cluster match -> immediately enrolls (<5ms)
+   * 3. If AI generation needed -> polls /status/:jobId until complete, then enrolls!
+   */
+  generateAndEnroll: async (params = {}) => {
+    set({ isGenerating: true, generationProgress: 15, error: null });
+
+    try {
+      const generateRes = await api.post('/roadmaps/generate', params);
+      const data = generateRes.data?.data;
+
+      // ─── Case A: Instant Cluster Match (<5ms) ─────────────────────
+      if (data?.isInstantClusterMatch && data.templateId) {
+        set({ generationProgress: 75 });
+        const enrollRes = await api.post('/roadmaps/enroll', {
+          templateId: data.templateId,
+        });
+
+        if (enrollRes.data?.success) {
+          const roadmap = enrollRes.data.data.roadmap;
+          const roadmaps = enrollRes.data.data.roadmaps || [roadmap];
+          set({
+            activeRoadmap: roadmap,
+            myRoadmaps: roadmaps,
+            isGenerating: false,
+            generationProgress: 100,
+            isAddRoadmapModalOpen: false,
+          });
+          return roadmap;
+        }
+      }
+
+      // ─── Case B: Asynchronous Background Generation ───────────────
+      if (data?.jobId) {
+        set({ generationProgress: 35 });
+        const jobId = data.jobId;
+
+        // Poll status every 800ms
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await api.get(`/roadmaps/generate/status/${jobId}`);
+            const statusData = statusRes.data?.data;
+
+            if (statusData?.status === 'generating') {
+              set({ generationProgress: Math.min(85, Math.max(40, statusData.progress || 50)) });
+            } else if (statusData?.status === 'completed' && statusData.result) {
+              clearInterval(pollInterval);
+              set({ generationProgress: 90 });
+
+              // Enroll in the generated custom roadmap
+              const enrollRes = await api.post('/roadmaps/enroll', {
+                customRoadmap: statusData.result,
+              });
+
+              if (enrollRes.data?.success) {
+                const roadmap = enrollRes.data.data.roadmap;
+                const roadmaps = enrollRes.data.data.roadmaps || [roadmap];
+                set({
+                  activeRoadmap: roadmap,
+                  myRoadmaps: roadmaps,
+                  isGenerating: false,
+                  generationProgress: 100,
+                  isAddRoadmapModalOpen: false,
+                });
+              }
+            } else if (statusData?.status === 'failed') {
+              clearInterval(pollInterval);
+              set({
+                isGenerating: false,
+                error: statusData.error || 'Roadmap generation failed. Please try again.',
+              });
+            }
+          } catch (pollErr) {
+            clearInterval(pollInterval);
+            set({
+              isGenerating: false,
+              error: pollErr.response?.data?.message || 'Failed checking generation status.',
+            });
+          }
+        }, 800);
+      }
+    } catch (err) {
+      set({
+        isGenerating: false,
+        error: err.response?.data?.message || 'Could not generate roadmap.',
+      });
+    }
+  },
+
+  /**
+   * UI Modal & Drawer Actions
+   */
+  openAddRoadmapModal: () => {
+    set({ isAddRoadmapModalOpen: true, error: null });
+  },
+
+  closeAddRoadmapModal: () => {
+    set({ isAddRoadmapModalOpen: false });
+  },
+
+  selectNode: (node) => {
+    set({ selectedNode: node, isDrawerOpen: true, isQuizOpen: false, quizResult: null });
+  },
+
+  closeDrawer: () => {
+    set({ isDrawerOpen: false, selectedNode: null });
+  },
+
+  openQuiz: () => {
+    set({ isQuizOpen: true });
+  },
+
+  closeQuiz: () => {
+    set({ isQuizOpen: false, quizResult: null });
+  },
+
+  /**
+   * Save user study notes on a specific node
+   */
+  saveNodeNotes: async (nodeId, userNotes) => {
+    const { activeRoadmap, myRoadmaps } = get();
+    if (!activeRoadmap) return;
+
+    try {
+      const res = await api.patch(`/roadmaps/${activeRoadmap._id}/nodes/${nodeId}`, {
+        userNotes,
+      });
+
+      if (res.data?.success) {
+        const updatedRoadmap = res.data.data.roadmap;
+        const updatedList = myRoadmaps.map((r) =>
+          r._id === updatedRoadmap._id ? updatedRoadmap : r
+        );
+        set({
+          activeRoadmap: updatedRoadmap,
+          myRoadmaps: updatedList,
+        });
+        const updated = updatedRoadmap.nodes.find((n) => n._id === nodeId);
+        if (updated) set({ selectedNode: updated });
+      }
+    } catch (err) {
+      console.error('Failed to save study notes:', err);
+    }
+  },
+
+  /**
+   * Submits answers to the milestone comprehension quiz
+   */
+  submitQuiz: async (nodeId, answers) => {
+    const { activeRoadmap, myRoadmaps } = get();
+    if (!activeRoadmap) return;
+
+    try {
+      const res = await api.post(`/roadmaps/${activeRoadmap._id}/nodes/${nodeId}/quiz`, {
+        answers,
+      });
+
+      if (res.data?.success) {
+        const result = res.data.data;
+        const updatedRoadmap = result.roadmap;
+        const updatedList = myRoadmaps.map((r) =>
+          r._id === updatedRoadmap._id ? updatedRoadmap : r
+        );
+
+        set({
+          quizResult: result,
+          activeRoadmap: updatedRoadmap,
+          myRoadmaps: updatedList,
+        });
+
+        const updated = updatedRoadmap.nodes.find((n) => n._id === nodeId);
+        if (updated) set({ selectedNode: updated });
+
+        // If passed, refresh user XP in auth store
+        if (result.passed && result.xpAwarded > 0) {
+          const authUser = useAuthStore.getState().user;
+          if (authUser) {
+            useAuthStore.setState({
+              user: {
+                ...authUser,
+                xp: (authUser.xp || 0) + result.xpAwarded,
+                level: Math.floor(((authUser.xp || 0) + result.xpAwarded) / 100) + 1,
+              },
+            });
+          }
+        }
+
+        return result;
+      }
+    } catch (err) {
+      console.error('Quiz submission error:', err);
+      throw err;
+    }
+  },
+}));

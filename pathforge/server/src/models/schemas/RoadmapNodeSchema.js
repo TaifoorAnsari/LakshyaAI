@@ -27,6 +27,29 @@ const resourceSchema = new mongoose.Schema(
       enum: ['video', 'article', 'doc', 'course'],
       default: 'doc',
     },
+    isStartHere: {
+      type: Boolean,
+      default: false,
+    },
+    isOfficialDoc: {
+      type: Boolean,
+      default: false,
+    },
+    duration: {
+      type: String,
+      default: '12 min read',
+      trim: true,
+    },
+    difficulty: {
+      type: String,
+      enum: ['Beginner', 'Intermediate', 'Advanced'],
+      default: 'Beginner',
+    },
+    source: {
+      type: String,
+      enum: ['verified', 'admin_curated', 'ai_suggested'],
+      default: 'verified',
+    },
   },
   { _id: true }
 );

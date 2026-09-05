@@ -87,6 +87,7 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.4s ease-out',
+        'slide-left': 'slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'bounce-in': 'bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
         'pulse-gold': 'pulseGold 2s ease-in-out infinite',
       },
@@ -98,6 +99,10 @@ export default {
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideLeft: {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
         },
         bounceIn: {
           '0%': { opacity: '0', transform: 'scale(0.3)' },
