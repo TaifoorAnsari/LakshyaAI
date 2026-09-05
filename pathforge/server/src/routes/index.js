@@ -57,9 +57,13 @@ router.get('/health', async (req, res) => {
 
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
+const clusterRoutes = require('./clusterRoutes');
+const roadmapRoutes = require('./roadmapRoutes');
 
 // Mount Feature Routers
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/clusters', clusterRoutes);
+router.use('/roadmaps', roadmapRoutes);
 
 module.exports = router;

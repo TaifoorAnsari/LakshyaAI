@@ -1,0 +1,157 @@
+/**
+ * Roadmap Generation Worker
+ * 
+ * Processes generation jobs:
+ * 1. Invokes Gemini 2.0 Flash (or blueprint fallback)
+ * 2. Validates node structure, resources, and quiz banks
+ * 3. Evaluates roadmap for potential ClusterTemplate promotion (Section 7)
+ * 4. Stores results for student retrieval
+ */
+
+const { Worker } = require('bullmq');
+const { getRedisClient, isRedisAvailable } = require('../config/redis');
+const { logger } = require('../config/logger');
+const { generateRoadmapWithGemini } = require('../services/roadmapEngine/geminiService');
+const { generateLocalVector } = require('../services/roadmapEngine/embeddingService');
+const { normalizeGoalText } = require('../services/roadmapEngine/normalizer');
+const ClusterTemplate = require('../models/ClusterTemplate');
+
+const QUEUE_NAME = 'roadmap-generation';
+
+let bullWorker = null;
+
+/**
+ * Core job processor function (shared by BullMQ and In-Memory queue)
+ * 
+ * @param {Object} jobData
+ * @param {Function} updateProgress - Optional progress callback
+ * @returns {Promise<Object>} The generated roadmap payload
+ */
+const processGenerationJob = async (jobData, updateProgress = () => {}) => {
+  const { goalText, skillLevel, hoursPerWeek, learningStyle } = jobData;
+
+  logger.info(`⚙️ Processing roadmap generation job for: "${goalText}"`);
+  updateProgress(20);
+
+  // 1. Invoke Gemini Generation Service
+  const { roadmap, source } = await generateRoadmapWithGemini({
+    goalText,
+    skillLevel,
+    hoursPerWeek,
+    learningStyle,
+  });
+
+  updateProgress(60);
+
+  // 2. Validate and enrich nodes
+  if (!roadmap || !Array.isArray(roadmap.nodes) || roadmap.nodes.length === 0) {
+    throw new Error('Roadmap generation produced an empty or invalid node structure');
+  }
+
+  // Ensure each node has proper order and defaults
+  const normalizedNodes = roadmap.nodes.map((node, index) => ({
+    order: node.order || index + 1,
+    title: node.title || `Milestone ${index + 1}`,
+    description: node.description || 'Milestone concepts and learning objectives.',
+    estimatedHours: Number(node.estimatedHours) || 10,
+    resources: Array.isArray(node.resources) ? node.resources : [],
+    quizQuestions: Array.isArray(node.quizQuestions) ? node.quizQuestions : [],
+  }));
+
+  const totalEstimatedHours = normalizedNodes.reduce(
+    (sum, n) => sum + (n.estimatedHours || 0),
+    0
+  );
+
+  const finalPayload = {
+    title: roadmap.title || `${goalText} Learning Path`,
+    category: roadmap.category || 'Specialized Topic',
+    description: roadmap.description || `Personalized curriculum for mastering ${goalText}.`,
+    totalEstimatedHours,
+    nodeCount: normalizedNodes.length,
+    nodes: normalizedNodes,
+    source, // 'gemini' or 'blueprint'
+    generatedAt: new Date().toISOString(),
+  };
+
+  updateProgress(85);
+
+  // 3. Dynamic Template Promotion (Section 7)
+  // If the roadmap has at least 4 well-structured nodes, save it into ClusterTemplate
+  // so future students asking for similar custom topics get instant matches!
+  try {
+    const existing = await ClusterTemplate.findOne({
+      title: finalPayload.title,
+    });
+
+    if (!existing && normalizedNodes.length >= 3) {
+      const keywords = [
+        normalizeGoalText(finalPayload.title),
+        normalizeGoalText(goalText),
+      ].filter(Boolean);
+
+      const textToEmbed = `${finalPayload.title} ${finalPayload.category} ${keywords.join(' ')}`;
+      const embedding = generateLocalVector(textToEmbed, 768);
+
+      await ClusterTemplate.create({
+        title: finalPayload.title,
+        category: finalPayload.category,
+        normalizedKeywords: keywords,
+        embedding,
+        nodes: normalizedNodes,
+        status: 'active',
+        usageCount: 1,
+        createdBy: 'promoted_from_gemini',
+      });
+
+      logger.info(`⭐ Automatically promoted custom roadmap "${finalPayload.title}" to ClusterTemplate catalog!`);
+    }
+  } catch (promoErr) {
+    logger.warn(`Could not promote roadmap to cluster catalog (${promoErr.message})`);
+  }
+
+  updateProgress(100);
+  logger.info(`✅ Successfully completed generation job for: "${finalPayload.title}" (${source})`);
+
+  return finalPayload;
+};
+
+/**
+ * Initializes BullMQ Worker if Redis is active
+ */
+const initBullWorker = () => {
+  if (bullWorker) return bullWorker;
+
+  if (isRedisAvailable()) {
+    const redis = getRedisClient();
+    if (redis) {
+      bullWorker = new Worker(
+        QUEUE_NAME,
+        async (job) => {
+          return await processGenerationJob(job.data, (prog) => job.updateProgress(prog));
+        },
+        {
+          connection: redis,
+          concurrency: 2,
+        }
+      );
+
+      bullWorker.on('completed', (job) => {
+        logger.info(`BullMQ Worker completed job ${job.id}`);
+      });
+
+      bullWorker.on('failed', (job, err) => {
+        logger.error(`BullMQ Worker job ${job?.id} failed: ${err.message}`);
+      });
+
+      logger.info('🚀 BullMQ roadmap-generation worker started');
+    }
+  }
+
+  return bullWorker;
+};
+
+module.exports = {
+  processGenerationJob,
+  initBullWorker,
+};
