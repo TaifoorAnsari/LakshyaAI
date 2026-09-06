@@ -15,6 +15,7 @@ import { useRoadmapStore } from '@/store/roadmapStore';
 import { useGamificationStore } from '@/store/gamificationStore';
 import RoadmapVisualizer from '@/features/roadmap/RoadmapVisualizer';
 import BadgeIcon from '@/components/BadgeIcon';
+import TodaysFocusCard from '@/components/schedule/TodaysFocusCard';
 import {
   Sparkles,
   Flame,
@@ -283,6 +284,9 @@ export default function DashboardPage() {
           </Link>
         </div>
       )}
+
+      {/* ─── Today's Study Focus Card ───────────────────────────────── */}
+      <TodaysFocusCard />
 
       {/* ─── Active Roadmap Section ─────────────────────────────────── */}
       {isLoading ? (

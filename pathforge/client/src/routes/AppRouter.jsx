@@ -22,6 +22,7 @@ import DashboardPage from '@/pages/DashboardPage';
 import OnboardingPage from '@/pages/OnboardingPage';
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
 import LeaderboardPage from '@/pages/LeaderboardPage';
+import SchedulePage from '@/pages/SchedulePage';
 import BadgeUnlockModal from '@/components/BadgeUnlockModal';
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute';
 
@@ -103,6 +104,14 @@ export default function AppRouter() {
           element={
             <ProtectedRoute>
               <LeaderboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/schedule"
+          element={
+            <ProtectedRoute>
+              <SchedulePage />
             </ProtectedRoute>
           }
         />

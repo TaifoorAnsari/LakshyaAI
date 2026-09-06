@@ -60,6 +60,7 @@ const userRoutes = require('./userRoutes');
 const clusterRoutes = require('./clusterRoutes');
 const roadmapRoutes = require('./roadmapRoutes');
 const gamificationRoutes = require('./gamificationRoutes');
+const scheduleRoutes = require('./scheduleRoutes');
 
 // Mount Feature Routers
 router.use('/auth', authRoutes);
@@ -67,5 +68,7 @@ router.use('/users', userRoutes);
 router.use('/clusters', clusterRoutes);
 router.use('/roadmaps', roadmapRoutes);
 router.use('/gamification', gamificationRoutes);
+router.use('/schedule', scheduleRoutes);
 
 module.exports = router;
+

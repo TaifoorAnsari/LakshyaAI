@@ -73,9 +73,9 @@ const getRefreshTokenCookieOptions = () => {
   return {
     httpOnly: true, // Prevents client-side scripts from reading the cookie
     secure: isProd, // Requires HTTPS in production
-    sameSite: 'strict', // Protects against CSRF attacks
+    sameSite: isProd ? 'strict' : 'lax', // 'lax' in dev ensures cookie is sent on page reload and navigation
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
-    path: '/api/v1/auth', // Scoped only to the auth routes
+    path: '/', // Root path ensures refresh cookie is reliably transmitted on all auth requests
   };
 };
 

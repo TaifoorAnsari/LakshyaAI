@@ -71,13 +71,13 @@ export default function Layout() {
                     to="/dashboard"
                     className="text-surface-muted hover:text-primary-600 dark:hover:text-primary-300 transition-colors text-sm font-medium"
                   >
-                    Dashboard
+                    My Roadmap
                   </Link>
                   <Link
-                    to="/roadmap"
+                    to="/schedule"
                     className="text-surface-muted hover:text-primary-600 dark:hover:text-primary-300 transition-colors text-sm font-medium"
                   >
-                    My Roadmap
+                    Schedule
                   </Link>
                   <Link
                     to="/leaderboard"
@@ -153,14 +153,14 @@ export default function Layout() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-surface-muted hover:text-primary-600 text-sm font-medium px-2 py-1"
                     >
-                      Dashboard
+                      My Roadmap
                     </Link>
                     <Link
-                      to="/roadmap"
+                      to="/schedule"
                       onClick={() => setMobileMenuOpen(false)}
                       className="text-surface-muted hover:text-primary-600 text-sm font-medium px-2 py-1"
                     >
-                      My Roadmap
+                      Schedule
                     </Link>
                     <Link
                       to="/leaderboard"

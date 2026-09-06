@@ -9,7 +9,7 @@
  */
 
 import { create } from 'zustand';
-import axios from 'axios';
+import api from '@/lib/axios';
 
 export const useAuthStore = create((set, get) => ({
   // ─── State ──────────────────────────────────────────────
@@ -32,7 +32,7 @@ export const useAuthStore = create((set, get) => ({
     });
 
     try {
-      sessionStorage.setItem('pf_user', JSON.stringify(user));
+      localStorage.setItem('pf_user', JSON.stringify(user));
     } catch {
       // Ignore
     }
@@ -50,7 +50,7 @@ export const useAuthStore = create((set, get) => ({
     });
 
     try {
-      sessionStorage.removeItem('pf_user');
+      localStorage.removeItem('pf_user');
     } catch {
       // Ignore
     }
@@ -63,7 +63,7 @@ export const useAuthStore = create((set, get) => ({
   setUser: (user) => {
     set({ user });
     try {
-      sessionStorage.setItem('pf_user', JSON.stringify(user));
+      localStorage.setItem('pf_user', JSON.stringify(user));
     } catch {
       // Ignore
     }
@@ -74,12 +74,8 @@ export const useAuthStore = create((set, get) => ({
    */
   initializeAuth: async () => {
     try {
-      // Try silent refresh using the httpOnly cookie
-      const res = await axios.post(
-        '/api/v1/auth/refresh',
-        {},
-        { withCredentials: true }
-      );
+      // Try silent refresh using the httpOnly cookie via configured api client
+      const res = await api.post('/auth/refresh');
 
       if (res.data?.success && res.data.data?.accessToken) {
         const { user, accessToken } = res.data.data;
@@ -89,23 +85,27 @@ export const useAuthStore = create((set, get) => ({
           isAuthenticated: true,
           isLoading: false,
         });
-        sessionStorage.setItem('pf_user', JSON.stringify(user));
+        try {
+          localStorage.setItem('pf_user', JSON.stringify(user));
+        } catch {
+          // Ignore
+        }
         return;
       }
     } catch {
       // No active refresh session or expired
     }
 
-    // Fallback: Check if user data exists in sessionStorage
+    // Fallback: Check if user data exists in localStorage
     try {
-      const stored = sessionStorage.getItem('pf_user');
+      const stored = localStorage.getItem('pf_user');
       if (stored) {
         set({ user: JSON.parse(stored), isLoading: false });
       } else {
-        set({ user: null, isLoading: false });
+        set({ user: null, isAuthenticated: false, isLoading: false });
       }
     } catch {
-      set({ user: null, isLoading: false });
+      set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
 

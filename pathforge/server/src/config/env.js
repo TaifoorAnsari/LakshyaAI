@@ -57,8 +57,17 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().default(''),
 });
 
+// In test environment, automatically isolate database to pathforge_test so tests never wipe development accounts
+const rawEnv = {
+  ...process.env,
+  MONGO_URI:
+    process.env.NODE_ENV === 'test'
+      ? (process.env.TEST_MONGO_URI || 'mongodb://localhost:27017/pathforge_test')
+      : (process.env.MONGO_URI || 'mongodb://localhost:27017/pathforge'),
+};
+
 // Validate and parse — crashes on failure with descriptive errors
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse(rawEnv);
 
 if (!parsed.success) {
   console.error('❌ Invalid environment variables:');

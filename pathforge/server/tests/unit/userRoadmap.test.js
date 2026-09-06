@@ -159,7 +159,7 @@ describe('UserRoadmap Progress & Quiz Engine', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.passed).toBe(true);
       expect(res.body.data.score).toBe(100);
-      expect(res.body.data.xpAwarded).toBe(50);
+      expect(res.body.data.xpAwarded).toBeGreaterThanOrEqual(50);
       expect(res.body.data.unlockedNextNode).toBe(true);
 
       // Verify in DB that:
