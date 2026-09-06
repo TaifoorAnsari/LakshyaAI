@@ -39,7 +39,6 @@ const sanitizeUser = (user) => {
     level: user.level,
     currentStreak: user.currentStreak,
     longestStreak: user.longestStreak,
-    streakFreezesAvailable: user.streakFreezesAvailable,
     createdAt: user.createdAt,
   };
 };

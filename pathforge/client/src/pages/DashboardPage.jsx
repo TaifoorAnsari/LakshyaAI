@@ -8,11 +8,13 @@
  * - Live generation progress bar
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useRoadmapStore } from '@/store/roadmapStore';
+import { useGamificationStore } from '@/store/gamificationStore';
 import RoadmapVisualizer from '@/features/roadmap/RoadmapVisualizer';
+import BadgeIcon from '@/components/BadgeIcon';
 import {
   Sparkles,
   Flame,
@@ -24,6 +26,10 @@ import {
   CheckCircle2,
   RefreshCw,
   AlertCircle,
+  Trophy,
+  Award,
+  ChevronRight,
+  Info,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -38,11 +44,21 @@ export default function DashboardPage() {
     generateAndEnroll,
   } = useRoadmapStore();
 
+  const {
+    stats,
+    badges,
+    fetchStats,
+    fetchBadges,
+    showBadgeCelebration,
+  } = useGamificationStore();
+
   const hasCompletedOnboarding = !!user?.onboarding?.completedAt;
 
   useEffect(() => {
     fetchActiveRoadmap();
-  }, [fetchActiveRoadmap]);
+    fetchStats();
+    fetchBadges();
+  }, [fetchActiveRoadmap, fetchStats, fetchBadges]);
 
   const handleStartGeneration = () => {
     if (!user?.onboarding?.goalText) return;
@@ -54,6 +70,16 @@ export default function DashboardPage() {
     });
   };
 
+  const currentLevel = stats?.level || user?.level || 1;
+  const currentXp = stats?.xp ?? (user?.xp || 0);
+  const levelProg = stats?.levelProgression || {
+    xpCurrentLevel: 0,
+    xpForNextLevel: 100,
+    progressPercentage: 0,
+    xpToNextLevel: 100,
+  };
+  const earnedBadges = badges.filter((b) => b.isEarned);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in space-y-8">
       {/* ─── Header ─────────────────────────────────────────────────── */}
@@ -63,55 +89,172 @@ export default function DashboardPage() {
             Welcome back, <span className="text-gradient">{user?.name || 'Explorer'}</span>!
           </h1>
           <p className="text-surface-muted text-sm mt-1">
-            Track your milestones and forge your path forward.
+            Track your milestones, protect your streak, and level up your mastery.
           </p>
         </div>
 
-        <Link to="/onboarding" className="btn-secondary text-sm">
-          <Sparkles size={16} />
-          {hasCompletedOnboarding ? 'Update Goal & Style' : 'Start Onboarding'}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/leaderboard"
+            className="btn-secondary text-sm inline-flex items-center gap-2 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+          >
+            <Trophy size={16} className="text-amber-500" />
+            <span>Leaderboard</span>
+          </Link>
+          <Link to="/onboarding" className="btn-secondary text-sm">
+            <Sparkles size={16} />
+            {hasCompletedOnboarding ? 'Update Preferences' : 'Start Onboarding'}
+          </Link>
+        </div>
       </div>
 
-      {/* ─── Gamification Stats Grid ─────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-accent-gold/10 flex items-center justify-center shrink-0">
-            <Zap size={24} className="text-accent-gold" />
+      {/* ─── Enhanced Gamification Widgets Grid ──────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* 1. Level & XP Progression Card */}
+        <div className="card p-6 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-white via-primary-50/20 to-primary-100/30 dark:from-surface-card dark:via-primary-950/20 dark:to-primary-900/20 border-primary-200/80 dark:border-primary-800">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <span className="text-xs uppercase font-bold tracking-wider text-surface-muted">
+                Player Rank
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-heading font-bold text-surface-dark dark:text-white">
+                  Level {currentLevel}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300">
+                  {currentLevel < 3 ? 'Novice' : currentLevel < 7 ? 'Practitioner' : 'Master'}
+                </span>
+              </div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-accent-teal text-white flex items-center justify-center font-heading font-bold text-xl shadow-soft">
+              {currentLevel}
+            </div>
           </div>
-          <div>
-            <div className="text-xs text-surface-muted uppercase font-semibold">Total XP</div>
-            <div className="text-2xl font-heading font-bold text-accent-gold">{user?.xp || 0}</div>
+
+          <div className="mt-6 space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="font-semibold text-surface-dark dark:text-surface-light flex items-center gap-1">
+                <Zap size={14} className="text-accent-gold fill-accent-gold" />
+                {currentXp} Total XP
+              </span>
+              <span className="text-surface-muted font-medium">
+                {levelProg.xpToNextLevel} XP to Lv {currentLevel + 1}
+              </span>
+            </div>
+            <div className="w-full h-3 rounded-full bg-primary-100 dark:bg-primary-900/60 overflow-hidden p-0.5 border border-primary-200/50 dark:border-primary-800">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-primary-600 via-primary-500 to-accent-teal transition-all duration-700 ease-out"
+                style={{ width: `${Math.min(100, Math.max(5, levelProg.progressPercentage))}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[11px] text-surface-muted pt-0.5">
+              <span>{levelProg.xpCurrentLevel} XP</span>
+              <span>{levelProg.xpForNextLevel} XP required</span>
+            </div>
           </div>
         </div>
 
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center shrink-0">
-            <span className="font-heading font-bold text-primary-600 text-lg">Lv</span>
+        {/* 2. Streak & Freeze Shield Card */}
+        <div className="card p-6 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-white via-orange-50/20 to-amber-100/20 dark:from-surface-card dark:via-orange-950/20 dark:to-amber-900/20 border-orange-200/60 dark:border-orange-900/40">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <span className="text-xs uppercase font-bold tracking-wider text-surface-muted">
+                Daily Discipline
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-heading font-bold text-orange-500">
+                  {stats?.currentStreak || user?.currentStreak || 0} Day Streak
+                </span>
+              </div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center shadow-soft">
+              <Flame size={26} className="animate-pulse fill-orange-500/30" />
+            </div>
           </div>
-          <div>
-            <div className="text-xs text-surface-muted uppercase font-semibold">Current Level</div>
-            <div className="text-2xl font-heading font-bold text-primary-600">{user?.level || 1}</div>
+
+          <div className="mt-4 pt-4 border-t border-orange-100 dark:border-orange-950 space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-surface-dark dark:text-white font-medium flex items-center gap-1.5">
+                <Flame size={14} className="text-orange-500" />
+                <span>All-Time Best:</span>
+                <span className="font-bold text-orange-500">
+                  {stats?.longestStreak || user?.longestStreak || 0} Days
+                </span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/10 text-orange-600 dark:text-orange-400">
+                {(stats?.currentStreak || user?.currentStreak || 0) > 0 ? 'Active Habit' : 'Start Today'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-surface-muted leading-tight pt-0.5">
+              {(stats?.currentStreak || user?.currentStreak || 0) > 0
+                ? 'Pass a milestone quiz each day to keep your daily study streak burning!'
+                : 'Study and pass a milestone assessment today to begin your streak!'}
+            </p>
           </div>
         </div>
 
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
-            <Flame size={24} className="text-orange-500" />
+        {/* 3. Achievements & Badges Showcase Card */}
+        <div className="card p-6 flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-white via-amber-50/20 to-yellow-100/20 dark:from-surface-card dark:via-amber-950/20 dark:to-yellow-900/20 border-amber-200/60 dark:border-amber-900/40">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <span className="text-xs uppercase font-bold tracking-wider text-surface-muted">
+                Achievements
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-heading font-bold text-surface-dark dark:text-white">
+                  {earnedBadges.length} / {badges.length || 12}
+                </span>
+                <span className="text-xs text-surface-muted font-medium">Unlocked</span>
+              </div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shadow-soft">
+              <Award size={26} />
+            </div>
           </div>
-          <div>
-            <div className="text-xs text-surface-muted uppercase font-semibold">Day Streak</div>
-            <div className="text-2xl font-heading font-bold text-orange-500">{user?.currentStreak || 0}</div>
-          </div>
-        </div>
 
-        <div className="card flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-accent-teal/10 flex items-center justify-center shrink-0">
-            <BookOpen size={24} className="text-accent-teal" />
-          </div>
-          <div>
-            <div className="text-xs text-surface-muted uppercase font-semibold">Streak Freezes</div>
-            <div className="text-2xl font-heading font-bold text-accent-teal">{user?.streakFreezesAvailable || 1}</div>
+          <div className="mt-4 pt-3 space-y-3">
+            {/* Badges Mini Row */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {badges.length === 0 ? (
+                <span className="text-xs text-surface-muted">Loading achievements...</span>
+              ) : (
+                badges.slice(0, 6).map((badge) => {
+                  const isEarned = badge.isEarned;
+                  return (
+                    <button
+                      key={badge._id || badge.code}
+                      onClick={() => showBadgeCelebration(badge)}
+                      className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-transform hover:scale-110 shrink-0 ${
+                        isEarned
+                          ? 'bg-amber-500/15 border border-amber-500/50 shadow-sm cursor-pointer'
+                          : 'bg-primary-100/60 dark:bg-primary-900/40 border border-dashed border-primary-300 dark:border-primary-800 opacity-40 grayscale cursor-default'
+                      }`}
+                      title={`${badge.name}: ${badge.description} (${badge.xpReward} XP)`}
+                    >
+                      <BadgeIcon icon={badge.icon} size={18} />
+                      {isEarned && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-primary-950" />
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-surface-muted text-[11px]">
+                {earnedBadges.length === 0
+                  ? 'Complete a quiz to earn your first badge!'
+                  : `Recent: ${earnedBadges[earnedBadges.length - 1]?.name}`}
+              </span>
+              <Link
+                to="/leaderboard"
+                className="text-primary-600 dark:text-primary-400 font-semibold hover:underline inline-flex items-center gap-0.5 text-xs"
+              >
+                Catalog <ChevronRight size={13} />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

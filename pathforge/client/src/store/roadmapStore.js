@@ -14,6 +14,7 @@
 import { create } from 'zustand';
 import api from '@/lib/axios';
 import { useAuthStore } from './authStore';
+import { useGamificationStore } from './gamificationStore';
 
 export const useRoadmapStore = create((set, get) => ({
   activeRoadmap: null,
@@ -272,17 +273,28 @@ export const useRoadmapStore = create((set, get) => ({
         const updated = updatedRoadmap.nodes.find((n) => n._id === nodeId);
         if (updated) set({ selectedNode: updated });
 
-        // If passed, refresh user XP in auth store
-        if (result.passed && result.xpAwarded > 0) {
+        // If passed, refresh user XP in auth store & gamification store
+        if (result.passed) {
+          const gamification = result.gamification;
           const authUser = useAuthStore.getState().user;
           if (authUser) {
             useAuthStore.setState({
               user: {
                 ...authUser,
-                xp: (authUser.xp || 0) + result.xpAwarded,
-                level: Math.floor(((authUser.xp || 0) + result.xpAwarded) / 100) + 1,
+                xp: gamification?.newXp ?? ((authUser.xp || 0) + (result.xpAwarded || 0)),
+                level: gamification?.newLevel ?? authUser.level,
+                currentStreak: gamification?.currentStreak ?? authUser.currentStreak,
               },
             });
+          }
+
+          // Refresh gamification stats & badges in background
+          useGamificationStore.getState().fetchStats();
+          useGamificationStore.getState().fetchBadges();
+
+          // If any badges were newly unlocked, trigger celebration modal
+          if (gamification?.newlyEarnedBadges && gamification.newlyEarnedBadges.length > 0) {
+            useGamificationStore.getState().showBadgeCelebration(gamification.newlyEarnedBadges[0]);
           }
         }
 

@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import HomePage from '@/pages/HomePage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -21,11 +21,15 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import DashboardPage from '@/pages/DashboardPage';
 import OnboardingPage from '@/pages/OnboardingPage';
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
+import LeaderboardPage from '@/pages/LeaderboardPage';
+import BadgeUnlockModal from '@/components/BadgeUnlockModal';
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute';
 
 export default function AppRouter() {
   return (
-    <Routes>
+    <>
+      <BadgeUnlockModal />
+      <Routes>
       <Route element={<Layout />}>
         {/* Public home page */}
         <Route path="/" element={<HomePage />} />
@@ -93,6 +97,17 @@ export default function AppRouter() {
           }
         />
 
+        {/* Gamification routes */}
+        <Route
+          path="/leaderboard"
+          element={
+            <ProtectedRoute>
+              <LeaderboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/roadmap" element={<Navigate to="/dashboard" replace />} />
+
         {/* Catch-all 404 */}
         <Route
           path="*"
@@ -110,5 +125,6 @@ export default function AppRouter() {
         />
       </Route>
     </Routes>
+    </>
   );
 }

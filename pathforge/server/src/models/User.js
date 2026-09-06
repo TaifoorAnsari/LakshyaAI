@@ -112,11 +112,9 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    streakFreezesAvailable: {
-      type: Number,
-      default: 1,
-      min: 0,
-      max: 3,
+    timezone: {
+      type: String,
+      default: 'UTC',
     },
     badges: [
       {

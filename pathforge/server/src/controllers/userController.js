@@ -29,7 +29,6 @@ const sanitizeUser = (user) => ({
   level: user.level,
   currentStreak: user.currentStreak,
   longestStreak: user.longestStreak,
-  streakFreezesAvailable: user.streakFreezesAvailable,
   badges: user.badges,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,

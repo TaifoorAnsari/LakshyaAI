@@ -10,6 +10,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "seed:clusters": "node src/scripts/seedClusters.js",
+    "seed:badges": "node src/scripts/seedBadges.js",
+    "seed:students": "node src/scripts/seedStudents.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"
   },

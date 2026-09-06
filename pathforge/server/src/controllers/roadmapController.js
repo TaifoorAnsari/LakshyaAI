@@ -25,6 +25,7 @@ const { AppError } = require('../middleware/errorHandler');
 const UserRoadmap = require('../models/UserRoadmap');
 const ClusterTemplate = require('../models/ClusterTemplate');
 const User = require('../models/User');
+const { recordActivity } = require('../services/gamificationService');
 
 /**
  * POST /api/v1/roadmaps/generate
@@ -473,14 +474,59 @@ const submitNodeQuiz = async (req, res, next) => {
         unlockedNextNode = true;
       }
 
-      // Award +50 XP to the student
+      // Check if this completes the roadmap
+      const completedMilestonesCount = roadmap.nodes.filter((n) => n.status === 'completed' || n._id.equals(node._id)).length;
+      const isRoadmapCompleted = completedMilestonesCount === roadmap.nodes.length;
+
+      // Check active roadmaps count
+      const activeRoadmapsCount = await UserRoadmap.countDocuments({
+        userId: req.user._id,
+        status: { $in: ['in_progress', 'completed'] },
+      });
+
+      // Award base +50 XP and trigger gamification engine
       const user = await User.findById(req.user._id);
+      let gamificationResult = null;
+
       if (user) {
         xpAwarded = 50;
         user.xp = (user.xp || 0) + 50;
-        user.level = Math.floor(user.xp / 100) + 1;
         await user.save();
+
+        gamificationResult = await recordActivity(req.user._id, 'QUIZ_PASSED', {
+          quizScore: score,
+          completedMilestonesCount,
+          isRoadmapCompleted,
+          activeRoadmapsCount,
+        });
+
+        // Add bonus XP from newly unlocked badges
+        if (gamificationResult?.newlyEarnedBadges?.length > 0) {
+          const badgeBonusXp = gamificationResult.newlyEarnedBadges.reduce(
+            (sum, b) => sum + (b.xpReward || 0),
+            0
+          );
+          xpAwarded += badgeBonusXp;
+        }
       }
+
+      roadmap.recalculateProgress();
+      await roadmap.save();
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          passed,
+          score,
+          correctCount,
+          totalQuestions,
+          xpAwarded,
+          unlockedNextNode,
+          answerFeedback,
+          roadmap,
+          gamification: gamificationResult,
+        },
+      });
     }
 
     roadmap.recalculateProgress();
@@ -493,10 +539,11 @@ const submitNodeQuiz = async (req, res, next) => {
         score,
         correctCount,
         totalQuestions,
-        xpAwarded,
-        unlockedNextNode,
+        xpAwarded: 0,
+        unlockedNextNode: false,
         answerFeedback,
         roadmap,
+        gamification: null,
       },
     });
   } catch (error) {
