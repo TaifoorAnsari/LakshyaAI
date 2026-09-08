@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRoadmapStore } from '@/store/roadmapStore';
 import { X, Sparkles, Compass, Clock, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
+import { validateStudyGoalInput } from '@/utils/domainValidation';
 
 const POPULAR_PATHS = [
   'Data Structures and Algorithms in C++',
@@ -57,14 +58,21 @@ export default function AddRoadmapModal() {
 
   const handleEnroll = async (e) => {
     e.preventDefault();
-    if (!goalText.trim()) {
+    const trimmed = goalText.trim();
+    if (!trimmed) {
       setValidationError('Please enter a goal or choose a path below.');
+      return;
+    }
+
+    const validation = validateStudyGoalInput(trimmed);
+    if (!validation.isValid) {
+      setValidationError(validation.error);
       return;
     }
 
     setValidationError('');
     await generateAndEnroll({
-      goalText: goalText.trim(),
+      goalText: trimmed,
       skillLevel,
       hoursPerWeek: Number(hoursPerWeek),
       learningStyle: 'hands-on',

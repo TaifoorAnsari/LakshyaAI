@@ -182,9 +182,13 @@ export const useRoadmapStore = create((set, get) => ({
         }, 800);
       }
     } catch (err) {
+      const serverMsg =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Could not generate roadmap. Please check your topic and try again.';
       set({
         isGenerating: false,
-        error: err.response?.data?.message || 'Could not generate roadmap.',
+        error: serverMsg,
       });
     }
   },

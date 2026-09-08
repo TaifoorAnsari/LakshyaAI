@@ -50,7 +50,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-primary-50 dark:bg-surface-dark transition-colors duration-300">
       {/* ─── Navbar ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 glass border-b border-primary-100 dark:border-primary-900">
+      <header className="sticky top-0 z-30 glass border-b border-primary-100 dark:border-surface-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -102,7 +102,7 @@ export default function Layout() {
                 <div className="flex items-center gap-3">
                   <Link
                     to="/settings"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-100/60 dark:bg-primary-900/40 border border-primary-200 dark:border-primary-800 hover:border-primary-400 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-100/60 dark:bg-surface-card border border-primary-200 dark:border-surface-border hover:border-primary-400 transition-colors"
                     title="Account Settings"
                   >
                     <div className="w-6 h-6 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold">
@@ -144,7 +144,7 @@ export default function Layout() {
 
           {/* Mobile Navigation Drawer */}
           {mobileMenuOpen && (
-            <div className="md:hidden pb-4 border-t border-primary-100 dark:border-primary-900 mt-2 pt-4">
+            <div className="md:hidden pb-4 border-t border-primary-100 dark:border-surface-border mt-2 pt-4">
               <div className="flex flex-col gap-3">
                 {isAuthenticated ? (
                   <>
@@ -200,7 +200,7 @@ export default function Layout() {
                 )}
                 <button
                   onClick={() => setDarkMode(!darkMode)}
-                  className="flex items-center gap-2 text-surface-muted text-sm px-2 py-1 pt-2 border-t border-primary-100 dark:border-primary-900"
+                  className="flex items-center gap-2 text-surface-muted text-sm px-2 py-1 pt-2 border-t border-primary-100 dark:border-surface-border"
                 >
                   {darkMode ? <Sun size={16} /> : <Moon size={16} />}
                   {darkMode ? 'Light mode' : 'Dark mode'}
@@ -217,7 +217,7 @@ export default function Layout() {
       </main>
 
       {/* ─── Footer ─────────────────────────────────────────── */}
-      <footer className="border-t border-primary-100 dark:border-primary-900 py-8">
+      <footer className="border-t border-primary-100 dark:border-surface-border py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">

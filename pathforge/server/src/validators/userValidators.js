@@ -5,6 +5,7 @@
  */
 
 const { z } = require('zod');
+const { validateLearningGoal } = require('../services/roadmapEngine/domainValidator');
 
 const onboardingSchema = z.object({
   body: z.object({
@@ -12,7 +13,17 @@ const onboardingSchema = z.object({
       .string({ required_error: 'Learning goal is required' })
       .trim()
       .min(2, 'Please describe your goal with at least 2 characters')
-      .max(200, 'Goal description cannot exceed 200 characters'),
+      .max(200, 'Goal description cannot exceed 200 characters')
+      .refine(
+        (val) => {
+          const res = validateLearningGoal(val);
+          return res.isValid;
+        },
+        (val) => {
+          const res = validateLearningGoal(val);
+          return { message: res.error || 'Please enter a genuine academic subject, technology, or course.' };
+        }
+      ),
     skillLevel: z.enum(['beginner', 'intermediate', 'advanced'], {
       required_error: 'Skill level is required (beginner, intermediate, or advanced)',
     }),

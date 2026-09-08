@@ -13,6 +13,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { env } = require('../../config/env');
 const { logger } = require('../../config/logger');
+const { validateLearningGoal } = require('./domainValidator');
 
 let geminiClient = null;
 
@@ -29,7 +30,25 @@ const getGeminiClient = () => {
  */
 const buildPrompt = ({ goalText, skillLevel = 'beginner', hoursPerWeek = 10, learningStyle = 'hands-on' }) => {
   return `You are PathForge AI, an expert computer science curriculum architect and senior tech educator.
-Create a comprehensive, production-grade learning roadmap for a student with the following profile:
+
+CRITICAL ACADEMIC VALIDITY GUARDRAIL:
+First, inspect the student's learning goal: "${goalText}".
+Determine if "${goalText}" is a genuine, recognizable academic subject, computer science/programming field, engineering discipline, mathematics, science, professional business skill, or educational course.
+If the goal is:
+- Vulgarity, profanity, swearing, or aggressive slang (e.g. "what the hell", "wtf", "damn"),
+- Conversational chat, questions, or nonsense (e.g. "who are you", "what is this", "tell me a joke", "hello"),
+- A feeling, mood, biological need, or sleep (e.g. "i wanna sleep", "i am hungry", "i feel lazy"),
+- Casual leisure, gaming, or sports without academic study context (e.g. "football", "play minecraft", "watch anime"),
+- Or gibberish/non-educational text:
+
+You MUST immediately reject it and return ONLY the following JSON object:
+{
+  "isValidTopic": false,
+  "error": "INVALID_STUDY_TOPIC",
+  "message": "The topic \\"${goalText}\\" is not recognized as a valid study subject or course. Please provide a genuine academic subject, technology, or professional skill (e.g. React & Node.js, Python Data Science, or System Design)."
+}
+
+If and ONLY if the goal is a legitimate educational or technological topic, generate a comprehensive learning roadmap:
 - Learning Goal: "${goalText}"
 - Current Skill Level: ${skillLevel}
 - Available Study Commitment: ${hoursPerWeek} hours per week
@@ -53,6 +72,7 @@ Each milestone MUST have:
 
 Return ONLY a valid JSON object with the exact keys:
 {
+  "isValidTopic": true,
   "title": "Clear roadmap title",
   "category": "High-level category (e.g. Web Development, Cloud & DevOps, Data & AI, Backend & Systems, Mobile Development)",
   "description": "2-3 sentence curriculum overview",
@@ -66,6 +86,15 @@ Do not enclose in markdown code fences. Output raw JSON only.`;
  * Used when GEMINI_API_KEY is not configured or offline during development/testing.
  */
 const generateBlueprintFallback = ({ goalText, skillLevel = 'beginner', hoursPerWeek = 10, learningStyle = 'hands-on' }) => {
+  // Guard against non-educational/invalid topics
+  const validation = validateLearningGoal(goalText);
+  if (!validation.isValid) {
+    const err = new Error(validation.error || `"${goalText}" is not recognized as a valid study subject or course.`);
+    err.code = 'ERR_INVALID_LEARNING_GOAL';
+    err.statusCode = 400;
+    throw err;
+  }
+
   const isVisual = learningStyle === 'visual';
   const totalWeeks = skillLevel === 'beginner' ? 8 : skillLevel === 'intermediate' ? 6 : 4;
   const hoursPerMilestone = Math.max(5, Math.round((hoursPerWeek * totalWeeks) / 4));
@@ -415,12 +444,26 @@ const generateRoadmapWithGemini = async ({
       if (text) {
         // Parse and validate JSON structure
         const parsed = JSON.parse(text);
+
+        // Check if Gemini rejected the topic as non-academic / nonsense
+        if (parsed.isValidTopic === false || parsed.error === 'INVALID_STUDY_TOPIC') {
+          const msg = parsed.message || `"${goalText}" is not recognized as a valid study subject or course.`;
+          logger.warn(`Gemini rejected invalid study topic: "${goalText}" - ${msg}`);
+          const err = new Error(msg);
+          err.code = 'ERR_INVALID_LEARNING_GOAL';
+          err.statusCode = 400;
+          throw err;
+        }
+
         if (parsed.title && Array.isArray(parsed.nodes) && parsed.nodes.length > 0) {
           logger.info(`✨ Gemini successfully generated roadmap: "${parsed.title}" with ${parsed.nodes.length} nodes`);
           return { roadmap: parsed, source: 'gemini' };
         }
       }
     } catch (error) {
+      if (error.code === 'ERR_INVALID_LEARNING_GOAL') {
+        throw error;
+      }
       logger.warn(`Gemini generation call failed (${error.message}). Falling back to blueprint generator.`);
     }
   } else {

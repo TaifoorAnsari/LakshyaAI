@@ -18,13 +18,19 @@ export default {
        */
       colors: {
         primary: {
-          50: '#F5F3FF',   // Page background, subtle sections
+          50: '#F8FAFC',   // Clean slate-50 subtle light sections
           100: '#EDE9FE',  // Hover states, light chips
-          300: '#C4B5FD',  // Borders, disabled states
-          500: '#8B5CF6',  // Secondary buttons, links
+          200: '#DDD6FE',  // Light accents
+          300: '#C4B5FD',  // Disabled borders
+          400: '#A78BFA',  // Legible light purple text in dark mode
+          500: '#8B5CF6',  // Secondary buttons, links, brand accent
           600: '#7C3AED',  // Primary buttons, active nav, brand accent
           700: '#6D28D9',  // Button hover/pressed states
-          900: '#3B0764',  // Headings, dark mode surface
+          750: '#253147',  // Clean dark mode active hover
+          800: '#1E293B',  // Clean dark slate border (slate-800)
+          850: '#172033',  // Clean dark intermediate divider
+          900: '#0F172A',  // Clean dark elevated card surface (slate-900)
+          950: '#0B0F17',  // Deep dark slate background canvas (slate-950)
         },
         accent: {
           gold: '#F5B301',  // XP, streaks, badges — gamification only
@@ -33,8 +39,12 @@ export default {
         },
         surface: {
           white: '#FFFFFF',
-          dark: '#1E1B2E',   // slate-900 equivalent
-          muted: '#6B7280',  // slate-500 equivalent
+          dark: '#0B0F17',   // Deep, clean dark canvas (replaces purple #1E1B2E)
+          card: '#0F172A',   // Clean dark card background (slate-900)
+          elevated: '#1E293B', // Elevated popovers / drawers
+          border: '#1E293B', // Clean subtle dark border (slate-800)
+          muted: '#94A3B8',  // Clean readable slate-400 text (replaces muddy #6B7280)
+          light: '#F1F5F9',  // Light slate text in dark mode
         },
       },
 

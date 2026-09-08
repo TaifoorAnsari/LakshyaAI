@@ -12,6 +12,9 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
+import api from '@/lib/axios';
+import { validateStudyGoalInput } from '@/utils/domainValidation';
 import {
   Sparkles,
   ArrowRight,
@@ -27,8 +30,6 @@ import {
   RefreshCw,
   Award,
 } from 'lucide-react';
-import api from '@/lib/axios';
-import { useAuthStore } from '@/store/authStore';
 
 const POPULAR_GOALS = [
   'Full-Stack MERN Development',
@@ -101,9 +102,17 @@ export default function OnboardingWizard() {
 
   const nextStep = () => {
     setError('');
-    if (step === 1 && !goalText.trim()) {
-      setError('Please type or select what you want to learn.');
-      return;
+    const trimmed = goalText.trim();
+    if (step === 1) {
+      if (!trimmed) {
+        setError('Please type or select what you want to learn.');
+        return;
+      }
+      const validation = validateStudyGoalInput(trimmed);
+      if (!validation.isValid) {
+        setError(validation.error);
+        return;
+      }
     }
     setStep((s) => Math.min(s + 1, 4));
   };

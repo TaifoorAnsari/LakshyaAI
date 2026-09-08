@@ -20,6 +20,7 @@
  */
 
 const { findClusterMatch } = require('../services/roadmapEngine/clusterMatcher');
+const { validateLearningGoal } = require('../services/roadmapEngine/domainValidator');
 const { addRoadmapGenerationJob, getJobStatus } = require('../queues/roadmapQueue');
 const { AppError } = require('../middleware/errorHandler');
 const UserRoadmap = require('../models/UserRoadmap');
@@ -55,6 +56,13 @@ const generateRoadmap = async (req, res, next) => {
     }
 
     goalText = goalText.trim();
+
+    // ─── Step 0: Validate Goal is a genuine study topic / course ──────
+    const validation = validateLearningGoal(goalText);
+    if (!validation.isValid) {
+      return next(new AppError(validation.error, 400, 'ERR_INVALID_LEARNING_GOAL'));
+    }
+
     const startTime = Date.now();
 
     // ─── Step 1: Check Cluster Matcher (Zero AI Latency & Cost) ────
@@ -167,6 +175,11 @@ const enrollInRoadmap = async (req, res, next) => {
       // Increment template usage count
       await ClusterTemplate.findByIdAndUpdate(templateId, { $inc: { usageCount: 1 } });
     } else if (customRoadmap && customRoadmap.nodes?.length > 0) {
+      const cleanedTitle = (customRoadmap.title || '').replace(/ Mastery Path| Learning Path/gi, '').trim();
+      const validation = validateLearningGoal(cleanedTitle);
+      if (!validation.isValid) {
+        return next(new AppError(validation.error || 'Invalid study topic for roadmap', 400, 'ERR_INVALID_LEARNING_GOAL'));
+      }
       sourceData = customRoadmap;
       source = customRoadmap.source || 'gemini';
     } else {

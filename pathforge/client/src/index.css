@@ -76,21 +76,25 @@
 
   /* Card component */
   .card {
-    @apply bg-white dark:bg-primary-900/50
+    @apply bg-white dark:bg-surface-card
            rounded-xl shadow-card
-           border border-primary-100 dark:border-primary-900/80
+           border border-slate-100 dark:border-surface-border
            p-6;
   }
 
   /* Input field */
   .input-field {
     @apply w-full px-4 py-2.5 rounded-lg
-           border border-primary-300 dark:border-primary-700
-           bg-white dark:bg-surface-dark
+           border border-slate-200 dark:border-surface-border
+           bg-white dark:bg-surface-card
            text-surface-dark dark:text-white
            placeholder:text-surface-muted
            focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
            transition-colors duration-200;
+  }
+
+  .input-field option {
+    @apply bg-white dark:bg-surface-card text-surface-dark dark:text-white;
   }
 
   /* Badge (gamification) */
@@ -112,7 +116,7 @@
 
   /* Glass effect for overlays */
   .glass {
-    @apply bg-white/70 dark:bg-surface-dark/70
+    @apply bg-white/80 dark:bg-surface-dark/85
            backdrop-blur-md;
   }
 }
