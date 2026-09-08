@@ -23,6 +23,7 @@ const {
   submitNodeQuiz,
   selectRoadmap,
   deleteRoadmap,
+  toggleTopicCompletion,
 } = require('../controllers/roadmapController');
 
 const router = express.Router();
@@ -42,6 +43,7 @@ router.get('/:id', authenticate, getRoadmapById);
 router.post('/:id/select', authenticate, selectRoadmap);
 router.delete('/:id', authenticate, deleteRoadmap);
 router.patch('/:id/nodes/:nodeId', authenticate, updateNodeProgress);
+router.patch('/:id/nodes/:nodeId/topics/:topicId', authenticate, toggleTopicCompletion);
 router.post('/:id/nodes/:nodeId/quiz', authenticate, submitNodeQuiz);
 
 module.exports = router;

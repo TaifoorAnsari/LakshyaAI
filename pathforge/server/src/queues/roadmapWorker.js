@@ -48,15 +48,38 @@ const processGenerationJob = async (jobData, updateProgress = () => {}) => {
     throw new Error('Roadmap generation produced an empty or invalid node structure');
   }
 
-  // Ensure each node has proper order and defaults
-  const normalizedNodes = roadmap.nodes.map((node, index) => ({
-    order: node.order || index + 1,
-    title: node.title || `Milestone ${index + 1}`,
-    description: node.description || 'Milestone concepts and learning objectives.',
-    estimatedHours: Number(node.estimatedHours) || 10,
-    resources: Array.isArray(node.resources) ? node.resources : [],
-    quizQuestions: Array.isArray(node.quizQuestions) ? node.quizQuestions : [],
-  }));
+  // Ensure each node has proper order, topics, and defaults
+  const normalizedNodes = roadmap.nodes.map((node, index) => {
+    const rawTopics = Array.isArray(node.topics) ? node.topics : [];
+    const normalizedTopics = rawTopics.map((t, tIdx) => ({
+      title: t.title || `Topic ${tIdx + 1}`,
+      description: t.description || '',
+      keyConcepts: Array.isArray(t.keyConcepts) ? t.keyConcepts : [],
+      resources: Array.isArray(t.resources)
+        ? t.resources.map((r, rIdx) => ({
+            title: r.title || `Resource ${rIdx + 1}`,
+            url: r.url || '#',
+            type: r.type || 'article',
+            isStartHere: Boolean(r.isStartHere || rIdx === 0),
+            isOfficialDoc: Boolean(r.isOfficialDoc),
+            duration: r.duration || (r.type === 'video' ? '20 min video' : '10 min read'),
+            difficulty: r.difficulty || 'Beginner',
+            source: r.source || 'ai_suggested',
+          }))
+        : [],
+      isCompleted: false,
+    }));
+
+    return {
+      order: node.order || index + 1,
+      title: node.title || `Milestone ${index + 1}`,
+      description: node.description || 'Milestone concepts and learning objectives.',
+      estimatedHours: Number(node.estimatedHours) || 10,
+      topics: normalizedTopics,
+      resources: Array.isArray(node.resources) ? node.resources : [],
+      quizQuestions: Array.isArray(node.quizQuestions) ? node.quizQuestions : [],
+    };
+  });
 
   const totalEstimatedHours = normalizedNodes.reduce(
     (sum, n) => sum + (n.estimatedHours || 0),

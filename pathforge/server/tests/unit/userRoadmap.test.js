@@ -122,6 +122,39 @@ describe('UserRoadmap Progress & Quiz Engine', () => {
     });
   });
 
+  describe('Sub-Topic Mastery & Completion Toggling', () => {
+    it('should toggle sub-topic completion status via PATCH /nodes/:nodeId/topics/:topicId', async () => {
+      const currentRoadmap = await UserRoadmap.findById(enrolledRoadmapId);
+      const node = currentRoadmap.nodes.id(firstNodeId);
+      expect(node.topics.length).toBeGreaterThan(0);
+
+      const topicId = node.topics[0]._id;
+      const initialStatus = node.topics[0].isCompleted;
+
+      // Toggle to true
+      const res = await request(app)
+        .patch(`/api/v1/roadmaps/${enrolledRoadmapId}/nodes/${firstNodeId}/topics/${topicId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.isCompleted).toBe(!initialStatus);
+
+      // Verify in DB
+      const dbRoadmap = await UserRoadmap.findById(enrolledRoadmapId);
+      expect(dbRoadmap.nodes.id(firstNodeId).topics.id(topicId).isCompleted).toBe(!initialStatus);
+
+      // Toggle back
+      const resBack = await request(app)
+        .patch(`/api/v1/roadmaps/${enrolledRoadmapId}/nodes/${firstNodeId}/topics/${topicId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .expect(200);
+
+      expect(resBack.body.success).toBe(true);
+      expect(resBack.body.data.isCompleted).toBe(initialStatus);
+    });
+  });
+
   describe('Comprehension Quiz & Milestone Unlocking', () => {
     it('should fail quiz and NOT unlock next milestone if answers are incorrect', async () => {
       // Find expected questions for first node

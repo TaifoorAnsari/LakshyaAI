@@ -24,7 +24,7 @@ const resourceSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ['video', 'article', 'doc', 'course'],
+      enum: ['video', 'article', 'doc', 'course', 'interactive'],
       default: 'doc',
     },
     isStartHere: {
@@ -49,6 +49,34 @@ const resourceSchema = new mongoose.Schema(
       type: String,
       enum: ['verified', 'admin_curated', 'ai_suggested'],
       default: 'verified',
+    },
+  },
+  { _id: true }
+);
+
+const topicSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    keyConcepts: {
+      type: [String],
+      default: [],
+    },
+    resources: {
+      type: [resourceSchema],
+      default: [],
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false,
     },
   },
   { _id: true }
@@ -105,6 +133,10 @@ const roadmapNodeSchema = new mongoose.Schema(
       min: 1,
       default: 5,
     },
+    topics: {
+      type: [topicSchema],
+      default: [],
+    },
     resources: {
       type: [resourceSchema],
       default: [],
@@ -119,6 +151,7 @@ const roadmapNodeSchema = new mongoose.Schema(
 
 module.exports = {
   roadmapNodeSchema,
+  topicSchema,
   resourceSchema,
   quizQuestionSchema,
 };

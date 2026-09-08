@@ -221,6 +221,77 @@ export const useRoadmapStore = create((set, get) => ({
   },
 
   /**
+   * Toggles completion of a sub-topic under a milestone node
+   */
+  toggleTopicCompletion: async (nodeId, topicId) => {
+    const { activeRoadmap, myRoadmaps, selectedNode } = get();
+    if (!activeRoadmap) return;
+
+    // Optimistically update activeRoadmap, myRoadmaps, and selectedNode
+    const updateNodes = (nodes) =>
+      nodes.map((n) => {
+        if (n._id !== nodeId) return n;
+        const updatedTopics = (n.topics || []).map((t) =>
+          t._id === topicId ? { ...t, isCompleted: !t.isCompleted } : t
+        );
+        return { ...n, topics: updatedTopics };
+      });
+
+    const optimisticRoadmap = {
+      ...activeRoadmap,
+      nodes: updateNodes(activeRoadmap.nodes),
+    };
+
+    const optimisticMyRoadmaps = myRoadmaps.map((r) =>
+      r._id === activeRoadmap._id ? optimisticRoadmap : r
+    );
+
+    let optimisticSelectedNode = selectedNode;
+    if (selectedNode && selectedNode._id === nodeId) {
+      optimisticSelectedNode = {
+        ...selectedNode,
+        topics: (selectedNode.topics || []).map((t) =>
+          t._id === topicId ? { ...t, isCompleted: !t.isCompleted } : t
+        ),
+      };
+    }
+
+    set({
+      activeRoadmap: optimisticRoadmap,
+      myRoadmaps: optimisticMyRoadmaps,
+      selectedNode: optimisticSelectedNode,
+    });
+
+    try {
+      const res = await api.patch(
+        `/roadmaps/${activeRoadmap._id}/nodes/${nodeId}/topics/${topicId}`
+      );
+      if (res.data?.success) {
+        const savedRoadmap = res.data.data.roadmap;
+        const savedList = res.data.data.roadmaps || myRoadmaps.map((r) =>
+          r._id === savedRoadmap._id ? savedRoadmap : r
+        );
+        set({
+          activeRoadmap: savedRoadmap,
+          myRoadmaps: savedList,
+        });
+        if (selectedNode && selectedNode._id === nodeId) {
+          const updatedNode = savedRoadmap.nodes.find((n) => n._id === nodeId);
+          if (updatedNode) set({ selectedNode: updatedNode });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to toggle topic completion:', err);
+      // Rollback on failure
+      set({
+        activeRoadmap,
+        myRoadmaps,
+        selectedNode,
+      });
+    }
+  },
+
+  /**
    * Save user study notes on a specific node
    */
   saveNodeNotes: async (nodeId, userNotes) => {

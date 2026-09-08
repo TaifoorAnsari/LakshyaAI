@@ -60,11 +60,20 @@ Each milestone MUST have:
 2. title: (concise, professional milestone title)
 3. description: (detailed 2-3 sentence overview of concepts to master)
 4. estimatedHours: (realistic hours based on total ${hoursPerWeek} hrs/week pacing)
-5. resources: (array of exactly 3-4 high-quality educational resources, ordered as follows:
-   - Item 1: Primary explainer matching the student's learning style (${learningStyle === 'visual' ? 'video' : 'article'}), with "isStartHere": true, "duration" (e.g. "15 min video" or "12 min read"), "difficulty": "${skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)}", "source": "ai_suggested". Only ONE resource can have isStartHere: true.
-   - Item 2: Official language/framework reference documentation, with "isOfficialDoc": true, "isStartHere": false, "duration": "Reference guide", "difficulty": "Intermediate", "source": "ai_suggested".
-   - Items 3+: Complementary articles/tutorials with "isStartHere": false, "isOfficialDoc": false, "duration": "20 min read", "difficulty": "${skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)}", "source": "ai_suggested".
-6. quizQuestions: (array of 3 diverse multiple-choice questions testing:
+5. topics: (array of 3 to 4 sequential, granular sub-topics covering every key topic of this milestone in detail)
+   Each topic object MUST have:
+   - title: (clear sub-topic title, e.g. "JSX Syntax, Virtual DOM & Reconciliation")
+   - description: (detailed 2-sentence explanation of what to learn and why it matters)
+   - keyConcepts: (array of 3-4 key takeaways/principles to master, e.g. ["Reconciliation algorithm", "Virtual DOM vs Real DOM", "JSX compilation"])
+   - resources: (array of 2-3 specific learning resources for THIS specific topic:
+     - 1 video tutorial: "type": "video", "duration": "15-30 min video", "difficulty": "${skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)}", "isStartHere": true, "source": "ai_suggested"
+     - 1 official reference/documentation: "type": "doc", "duration": "Reference doc", "isOfficialDoc": true, "source": "ai_suggested"
+     - 1 hands-on practice or deep-dive article: "type": "interactive" or "article", "duration": "15-20 min", "source": "ai_suggested"
+   - isCompleted: false
+6. resources: (array of 2-3 milestone-level overview resources for quick high-level reference:
+   - 1 primary video/article matching learning style with "isStartHere": true
+   - 1 official documentation reference with "isOfficialDoc": true
+7. quizQuestions: (array of 3 diverse multiple-choice questions testing:
    - Question 1: Core foundational concept
    - Question 2: Implementation pattern or syntax rule
    - Question 3: Common pitfall or best practice
@@ -79,6 +88,372 @@ Return ONLY a valid JSON object with the exact keys:
   "nodes": [...]
 }
 Do not enclose in markdown code fences. Output raw JSON only.`;
+};
+
+/**
+ * Helper to generate 3-4 granular sub-topics with curated study resources for each milestone
+ */
+const createBlueprintTopics = (goalText, order, isVisual, skillLevel) => {
+  const cap = goalText.charAt(0).toUpperCase() + goalText.slice(1);
+  if (order === 1) {
+    return [
+      {
+        title: `${cap} Development Tooling & Environment Setup`,
+        description: `Install compilers, runtimes, linters, and configure your local workspace for production ${goalText} development.`,
+        keyConcepts: ['Toolchain & runtime installation', 'Package management and workspace configuration', 'IDE extensions & debugging tools'],
+        resources: [
+          {
+            title: `${cap} Complete Setup & Hello World Video`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' environment setup tutorial')}`,
+            type: 'video',
+            duration: '20 min video',
+            difficulty: 'Beginner',
+            isStartHere: true,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Official ${cap} Getting Started Guide`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' official getting started')}`,
+            type: 'doc',
+            duration: 'Reference doc',
+            difficulty: 'Beginner',
+            isStartHere: false,
+            isOfficialDoc: true,
+            source: 'ai_suggested',
+          },
+          {
+            title: `${cap} Interactive Sandbox Practice`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' interactive sandbox exercises')}`,
+            type: 'interactive',
+            duration: '15 min practice',
+            difficulty: 'Beginner',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `Core Syntax, Primitive Types & Variables`,
+        description: `Understand variable scoping, primary data types, operators, and basic statements in ${goalText}.`,
+        keyConcepts: ['Strong vs dynamic typing paradigms', 'Memory allocation for primitives', 'Lexical scoping and hoisting'],
+        resources: [
+          {
+            title: `${cap} Syntax & Data Types Deep Dive`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' syntax data types')}`,
+            type: 'video',
+            duration: '25 min video',
+            difficulty: 'Beginner',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Language Specifications & Syntax Reference`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' syntax language reference')}`,
+            type: 'doc',
+            duration: '15 min read',
+            difficulty: 'Beginner',
+            isStartHere: false,
+            isOfficialDoc: true,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `Control Flow, Functions & Modular Constructs`,
+        description: `Master condition branches, loops, function declarations, parameters, and error handling fundamentals.`,
+        keyConcepts: ['Pure functions and side effects', 'Branching execution & recursion', 'Handling runtime exceptions'],
+        resources: [
+          {
+            title: `${cap} Control Flow & Functions Masterclass`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' functions control flow')}`,
+            type: 'video',
+            duration: '30 min video',
+            difficulty: 'Beginner',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Hands-on Code Drills: Functions in ${cap}`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' coding challenges functions')}`,
+            type: 'interactive',
+            duration: '20 min practice',
+            difficulty: 'Beginner',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+    ];
+  } else if (order === 2) {
+    return [
+      {
+        title: `Modular Architecture & File Organization`,
+        description: `Structure real-world ${goalText} projects using design patterns, separation of concerns, and reusable modules.`,
+        keyConcepts: ['Single responsibility principle', 'Import/export conventions', 'Dependency management'],
+        resources: [
+          {
+            title: `${cap} Project Structure & Architecture Guide`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' project architecture patterns')}`,
+            type: 'video',
+            duration: '25 min video',
+            difficulty: 'Intermediate',
+            isStartHere: true,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Official Architectural Style Guide for ${cap}`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' style guide architecture')}`,
+            type: 'doc',
+            duration: 'Reference doc',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: true,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `Asynchronous Workflows, Events & Streams`,
+        description: `Handle concurrency, non-blocking I/O, event loops, promises/futures, and data streams effectively.`,
+        keyConcepts: ['Concurrency vs parallelism', 'Error propagation in async flows', 'Memory-safe streaming'],
+        resources: [
+          {
+            title: `Async Programming & Streams in ${cap}`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' async programming streams')}`,
+            type: 'video',
+            duration: '30 min video',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Async Patterns In-Depth Article`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' async await patterns article')}`,
+            type: 'article',
+            duration: '15 min read',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `State Management & In-Memory Data Structures`,
+        description: `Design efficient in-memory data representations and state synchronization mechanisms.`,
+        keyConcepts: ['Immutable state paradigms', 'Lookup optimization with maps/sets', 'Garbage collection considerations'],
+        resources: [
+          {
+            title: `${cap} State Management Patterns Video`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' state management data structures')}`,
+            type: 'video',
+            duration: '20 min video',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Interactive State & Data Modeling Sandbox`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' state exercises')}`,
+            type: 'interactive',
+            duration: '20 min practice',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+    ];
+  } else if (order === 3) {
+    return [
+      {
+        title: `Automated Unit Testing & Mocking`,
+        description: `Set up test runners, write comprehensive test assertions, and mock external service dependencies.`,
+        keyConcepts: ['Test-driven design', 'Mocking I/O and network boundaries', 'Code coverage metrics'],
+        resources: [
+          {
+            title: `${cap} Unit Testing Crash Course`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' unit testing guide')}`,
+            type: 'video',
+            duration: '30 min video',
+            difficulty: 'Intermediate',
+            isStartHere: true,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Official Testing Framework Documentation`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' testing framework docs')}`,
+            type: 'doc',
+            duration: 'Reference doc',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: true,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `Performance Profiling & Memory Leak Prevention`,
+        description: `Profile CPU execution bottlenecks, benchmark algorithms, and inspect heap allocations to optimize throughput.`,
+        keyConcepts: ['CPU time profiling', 'Detecting retained memory leaks', 'Cache invalidation strategies'],
+        resources: [
+          {
+            title: `Profiling & Optimizing ${cap} Applications`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' performance profiling optimization')}`,
+            type: 'video',
+            duration: '25 min video',
+            difficulty: 'Advanced',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `High-Performance Engineering Article`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' performance optimization best practices')}`,
+            type: 'article',
+            duration: '18 min read',
+            difficulty: 'Advanced',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `Security Hardening & Input Sanitization`,
+        description: `Defend against injection vulnerabilities, implement strict authentication tokens, and audit third-party dependencies.`,
+        keyConcepts: ['Sanitizing untrusted inputs', 'OWASP vulnerability defenses', 'Secret management & HTTPS enforcement'],
+        resources: [
+          {
+            title: `${cap} Security Checklist & Vulnerability Prevention`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' security best practices owasp')}`,
+            type: 'article',
+            duration: '20 min read',
+            difficulty: 'Advanced',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Hands-on Security Audit Exercises`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' security audit lab')}`,
+            type: 'interactive',
+            duration: '25 min practice',
+            difficulty: 'Advanced',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+    ];
+  } else {
+    return [
+      {
+        title: `Production Architecture & Capstone Design`,
+        description: `Architect a full-scale ${goalText} application adhering to industry standards and clean architecture paradigms.`,
+        keyConcepts: ['Domain-driven modeling', 'Scalable component design', 'End-to-end telemetry'],
+        resources: [
+          {
+            title: `Building a Production-Grade ${cap} App (Full Project)`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(goalText + ' full capstone project tutorial')}`,
+            type: 'video',
+            duration: '45 min video',
+            difficulty: 'Advanced',
+            isStartHere: true,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `System Architecture Specification Template`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' production architecture case study')}`,
+            type: 'article',
+            duration: '20 min read',
+            difficulty: 'Advanced',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `Docker Containerization & Multi-Stage Builds`,
+        description: `Package your application into lightweight, reproducible container images with multi-stage Dockerfiles.`,
+        keyConcepts: ['Container isolation & layers', 'Optimizing image bundle size', 'Environment variable injection'],
+        resources: [
+          {
+            title: `Dockerizing ${cap} Applications Masterclass`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent('dockerize ' + goalText + ' tutorial')}`,
+            type: 'video',
+            duration: '25 min video',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Official Docker Documentation & Multi-Stage Guide`,
+            url: `https://docs.docker.com/develop/develop-images/multistage-build/`,
+            type: 'doc',
+            duration: 'Reference doc',
+            difficulty: 'Intermediate',
+            isStartHere: false,
+            isOfficialDoc: true,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+      {
+        title: `CI/CD Automation & Cloud Deployment`,
+        description: `Configure GitHub Actions or automated deployment pipelines to test, build, and deploy live to cloud infrastructure.`,
+        keyConcepts: ['Continuous integration pipelines', 'Health checks and zero-downtime releases', 'Cloud hosting & DNS setup'],
+        resources: [
+          {
+            title: `CI/CD Pipeline Setup for ${cap} with GitHub Actions`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent('github actions cicd ' + goalText)}`,
+            type: 'video',
+            duration: '30 min video',
+            difficulty: 'Advanced',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+          {
+            title: `Interactive Cloud Deployment Lab`,
+            url: `https://duckduckgo.com/?q=${encodeURIComponent(goalText + ' cloud deployment guide')}`,
+            type: 'interactive',
+            duration: '30 min practice',
+            difficulty: 'Advanced',
+            isStartHere: false,
+            isOfficialDoc: false,
+            source: 'ai_suggested',
+          },
+        ],
+        isCompleted: false,
+      },
+    ];
+  }
 };
 
 /**
@@ -109,6 +484,7 @@ const generateBlueprintFallback = ({ goalText, skillLevel = 'beginner', hoursPer
         title: `${goalText} Core Foundations & Environment Setup`,
         description: `Establish strong mental models, install essential tools, and master fundamental syntax and concepts of ${goalText}.`,
         estimatedHours: hoursPerMilestone,
+        topics: createBlueprintTopics(goalText, 1, isVisual, skillLevel),
         resources: [
           {
             title: isVisual ? `${goalText} Comprehensive Video Crash Course` : `${goalText} Core Architecture & Fundamentals Guide`,
@@ -184,6 +560,7 @@ const generateBlueprintFallback = ({ goalText, skillLevel = 'beginner', hoursPer
         title: `Intermediate ${goalText} Architecture & Patterns`,
         description: `Deepen your knowledge with design patterns, asynchronous workflows, data structures, and best practices in ${goalText}.`,
         estimatedHours: hoursPerMilestone + 2,
+        topics: createBlueprintTopics(goalText, 2, isVisual, skillLevel),
         resources: [
           {
             title: isVisual ? `${goalText} Design Patterns & Workflow Video` : `In-depth ${goalText} Patterns & Best Practices Guide`,
@@ -259,6 +636,7 @@ const generateBlueprintFallback = ({ goalText, skillLevel = 'beginner', hoursPer
         title: `Performance, Testing & Security in ${goalText}`,
         description: `Implement unit and integration testing, memory and query profiling, and security defenses specific to ${goalText}.`,
         estimatedHours: hoursPerMilestone + 1,
+        topics: createBlueprintTopics(goalText, 3, isVisual, skillLevel),
         resources: [
           {
             title: isVisual ? `${goalText} Automated Testing & Profiling Masterclass` : `${goalText} Testing Strategies & Frameworks`,
@@ -334,6 +712,7 @@ const generateBlueprintFallback = ({ goalText, skillLevel = 'beginner', hoursPer
         title: `Capstone Project & Production Deployment`,
         description: `Build a production-ready application end-to-end, configure CI/CD automation, and deploy live on cloud infrastructure.`,
         estimatedHours: hoursPerMilestone + 4,
+        topics: createBlueprintTopics(goalText, 4, isVisual, skillLevel),
         resources: [
           {
             title: isVisual ? `Deploying ${goalText} to Production (Full Walkthrough)` : `Deploying ${goalText} to Modern Cloud Infrastructure`,
@@ -479,4 +858,5 @@ module.exports = {
   generateRoadmapWithGemini,
   buildPrompt,
   generateBlueprintFallback,
+  createBlueprintTopics,
 };

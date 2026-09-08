@@ -27,6 +27,7 @@ const UserRoadmap = require('../models/UserRoadmap');
 const ClusterTemplate = require('../models/ClusterTemplate');
 const User = require('../models/User');
 const { recordActivity } = require('../services/gamificationService');
+const { createBlueprintTopics } = require('../services/roadmapEngine/geminiService');
 
 /**
  * POST /api/v1/roadmaps/generate
@@ -242,6 +243,30 @@ const enrollInRoadmap = async (req, res, next) => {
         return 0;
       });
 
+      // Clone or generate granular sub-topics for every milestone
+      const rawTopics = Array.isArray(node.topics) && node.topics.length > 0
+        ? node.topics
+        : createBlueprintTopics(node.title, node.order || index + 1, learningStyle === 'visual', studentUser?.onboarding?.skillLevel || 'beginner');
+
+      const clonedTopics = rawTopics.map((t, tIdx) => ({
+        title: t.title || `Topic ${tIdx + 1}`,
+        description: t.description || '',
+        keyConcepts: Array.isArray(t.keyConcepts) ? t.keyConcepts : [],
+        resources: Array.isArray(t.resources)
+          ? t.resources.map((r, rIdx) => ({
+              title: r.title || `Resource ${rIdx + 1}`,
+              url: r.url || '#',
+              type: r.type || 'article',
+              isStartHere: Boolean(r.isStartHere || rIdx === 0),
+              isOfficialDoc: Boolean(r.isOfficialDoc),
+              duration: r.duration || (r.type === 'video' ? '20 min video' : '10 min read'),
+              difficulty: r.difficulty || 'Beginner',
+              source: r.source || (source === 'cluster_template' ? 'verified' : 'ai_suggested'),
+            }))
+          : [],
+        isCompleted: false,
+      }));
+
       return {
         order: node.order || index + 1,
         title: node.title,
@@ -252,6 +277,7 @@ const enrollInRoadmap = async (req, res, next) => {
         quizScore: null,
         quizPassed: false,
         userNotes: '',
+        topics: clonedTopics,
         resources: processedResources,
         quizQuestions: node.quizQuestions || [],
       };
@@ -637,6 +663,59 @@ const deleteRoadmap = async (req, res, next) => {
   }
 };
 
+/**
+ * PATCH /api/v1/roadmaps/:id/nodes/:nodeId/topics/:topicId
+ * Toggles completion status of a specific sub-topic within a milestone
+ */
+const toggleTopicCompletion = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { id: roadmapId, nodeId, topicId } = req.params;
+
+    const roadmap = await UserRoadmap.findOne({ _id: roadmapId, userId });
+    if (!roadmap) {
+      return next(new AppError('Roadmap not found', 404, 'ERR_NOT_FOUND'));
+    }
+
+    const node = roadmap.nodes.id(nodeId);
+    if (!node) {
+      return next(new AppError('Milestone node not found', 404, 'ERR_NOT_FOUND'));
+    }
+
+    if (!Array.isArray(node.topics) || node.topics.length === 0) {
+      return next(new AppError('Milestone has no subtopics', 400, 'ERR_VALIDATION'));
+    }
+
+    const topic = node.topics.id(topicId);
+    if (!topic) {
+      return next(new AppError('Topic not found', 404, 'ERR_NOT_FOUND'));
+    }
+
+    topic.isCompleted = !topic.isCompleted;
+    await roadmap.save();
+
+    // Fetch refreshed list of enrolled roadmaps
+    const roadmaps = await UserRoadmap.find({
+      userId,
+      status: { $in: ['in_progress', 'completed'] },
+    }).sort({ lastAccessedAt: -1, updatedAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      message: `Topic marked as ${topic.isCompleted ? 'completed' : 'incomplete'}`,
+      data: {
+        roadmap,
+        roadmaps,
+        nodeId,
+        topicId,
+        isCompleted: topic.isCompleted,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   generateRoadmap,
   getGenerationStatus,
@@ -647,4 +726,5 @@ module.exports = {
   submitNodeQuiz,
   selectRoadmap,
   deleteRoadmap,
+  toggleTopicCompletion,
 };

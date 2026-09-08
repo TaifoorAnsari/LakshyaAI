@@ -12,7 +12,7 @@
  */
 
 const mongoose = require('mongoose');
-const { resourceSchema, quizQuestionSchema } = require('./schemas/RoadmapNodeSchema');
+const { topicSchema, resourceSchema, quizQuestionSchema } = require('./schemas/RoadmapNodeSchema');
 
 const userMilestoneSchema = new mongoose.Schema(
   {
@@ -61,6 +61,10 @@ const userMilestoneSchema = new mongoose.Schema(
       type: String,
       default: '',
       maxLength: 5000,
+    },
+    topics: {
+      type: [topicSchema],
+      default: [],
     },
     resources: {
       type: [resourceSchema],
